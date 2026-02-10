@@ -9,21 +9,22 @@ if (!isset($_SESSION['admin_name'])) {
 
 $adminName = $_SESSION['admin_name'] ?? 'Admin';
 
-// Sample report data
-$salesData = [
-    ['date' => '2024-01-23', 'transaction_id' => 'TXN-001', 'customer' => 'John Doe', 'items' => 3, 'subtotal' => 850.00, 'tax' => 85.00, 'total' => 935.00, 'payment_method' => 'Cash'],
-    ['date' => '2024-01-23', 'transaction_id' => 'TXN-002', 'customer' => 'Jane Smith', 'items' => 2, 'subtotal' => 450.00, 'tax' => 45.00, 'total' => 495.00, 'payment_method' => 'Card'],
-    ['date' => '2024-01-22', 'transaction_id' => 'TXN-003', 'customer' => 'Mike Johnson', 'items' => 5, 'subtotal' => 1250.00, 'tax' => 125.00, 'total' => 1375.00, 'payment_method' => 'Digital'],
-    ['date' => '2024-01-22', 'transaction_id' => 'TXN-004', 'customer' => 'Sarah Williams', 'items' => 1, 'subtotal' => 125.00, 'tax' => 12.50, 'total' => 137.50, 'payment_method' => 'Cash'],
-    ['date' => '2024-01-21', 'transaction_id' => 'TXN-005', 'customer' => 'David Brown', 'items' => 4, 'subtotal' => 980.00, 'tax' => 98.00, 'total' => 1078.00, 'payment_method' => 'Card'],
-];
+// Data placeholders (connect to DB/backend later)
+$salesData = [];
 
-$servicesData = [
-    ['date' => '2024-01-23', 'service_id' => 'SRV-001', 'service_name' => 'Engine Oil Change', 'technician' => 'Michael Chen', 'customer' => 'Robert Lee', 'duration' => '45 min', 'amount' => 450.00, 'status' => 'Completed'],
-    ['date' => '2024-01-23', 'service_id' => 'SRV-002', 'service_name' => 'Wheel Alignment', 'technician' => 'Lisa Wong', 'customer' => 'Emily Davis', 'duration' => '60 min', 'amount' => 750.00, 'status' => 'Completed'],
-    ['date' => '2024-01-22', 'service_id' => 'SRV-003', 'service_name' => 'Tire Rotation', 'technician' => 'Michael Chen', 'customer' => 'Chris Wilson', 'duration' => '30 min', 'amount' => 350.00, 'status' => 'Completed'],
-    ['date' => '2024-01-22', 'service_id' => 'SRV-004', 'service_name' => 'Engine Oil Change', 'technician' => 'Lisa Wong', 'customer' => 'Anna Taylor', 'duration' => '45 min', 'amount' => 450.00, 'status' => 'Completed'],
-];
+$servicesData = [];
+
+
+// Totals (computed from data; 0.00 when no records)
+$salesTotal = 0.0;
+foreach ($salesData as $sale) {
+    $salesTotal += (float)($sale['total'] ?? 0);
+}
+
+$servicesTotal = 0.0;
+foreach ($servicesData as $service) {
+    $servicesTotal += (float)($service['amount'] ?? 0);
+}
 
 $pageTitle = "Reports & Analytics - Machine System POS";
 ob_start();
@@ -124,9 +125,9 @@ ob_start();
             <div class="filters-section">
                 <div class="date-range">
                     <label><i class="fas fa-calendar"></i> Date Range:</label>
-                    <input type="date" id="startDate" class="date-input" value="2024-01-21">
+                    <input type="date" id="startDate" class="date-input" value="<?php echo date('Y-m-d'); ?>">
                     <span>to</span>
-                    <input type="date" id="endDate" class="date-input" value="2024-01-23">
+                    <input type="date" id="endDate" class="date-input" value="<?php echo date('Y-m-d'); ?>">
                     <button class="apply-btn" id="applyFilter">
                         <i class="fas fa-check"></i> Apply
                     </button>
@@ -153,11 +154,9 @@ ob_start();
                         <i class="fas fa-dollar-sign"></i>
                     </div>
                     <div class="card-content">
-                        <h3 id="totalSales">₱4,020.50</h3>
+                        <h3 id="totalSales">₱0.00</h3>
                         <p>Total Sales</p>
-                        <span class="trend positive">
-                            <i class="fas fa-arrow-up"></i> +12.5%
-                        </span>
+                        <span class="trend">—</span>
                     </div>
                 </div>
                 <div class="summary-card customers">
@@ -165,11 +164,9 @@ ob_start();
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="card-content">
-                        <h3 id="totalCustomers">9</h3>
+                        <h3 id="totalCustomers">0</h3>
                         <p>Total Customers</p>
-                        <span class="trend positive">
-                            <i class="fas fa-arrow-up"></i> +8.2%
-                        </span>
+                        <span class="trend">—</span>
                     </div>
                 </div>
                 <div class="summary-card services">
@@ -177,11 +174,9 @@ ob_start();
                         <i class="fas fa-tools"></i>
                     </div>
                     <div class="card-content">
-                        <h3 id="totalServices">4</h3>
+                        <h3 id="totalServices">0</h3>
                         <p>Services Rendered</p>
-                        <span class="trend positive">
-                            <i class="fas fa-arrow-up"></i> +15.0%
-                        </span>
+                        <span class="trend">—</span>
                     </div>
                 </div>
                 <div class="summary-card avg">
@@ -189,11 +184,9 @@ ob_start();
                         <i class="fas fa-chart-bar"></i>
                     </div>
                     <div class="card-content">
-                        <h3 id="avgTransaction">₱446.72</h3>
+                        <h3 id="avgTransaction">₱0.00</h3>
                         <p>Avg Transaction</p>
-                        <span class="trend neutral">
-                            <i class="fas fa-minus"></i> 0%
-                        </span>
+                        <span class="trend">—</span>
                     </div>
                 </div>
             </div>
@@ -256,7 +249,12 @@ ob_start();
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($salesData as $sale): ?>
+                                <?php if (empty($salesData)): ?>
+                                <tr>
+                                    <td colspan="8" class="text-center">No data yet</td>
+                                </tr>
+                                <?php else: ?>
+<?php foreach ($salesData as $sale): ?>
                                 <tr>
                                     <td><?php echo date('M d, Y', strtotime($sale['date'])); ?></td>
                                     <td><span class="txn-badge"><?php echo $sale['transaction_id']; ?></span></td>
@@ -268,14 +266,17 @@ ob_start();
                                     <td><span class="payment-badge"><?php echo $sale['payment_method']; ?></span></td>
                                 </tr>
                                 <?php endforeach; ?>
-                            </tbody>
-                            <tfoot>
+                                <?php endif; ?>
+</tbody>
+                            <?php if (!empty($salesData)): ?>
+<tfoot>
                                 <tr class="total-row">
                                     <td colspan="6"><strong>TOTAL</strong></td>
-                                    <td class="total"><strong>₱4,020.50</strong></td>
+                                    <td class="total"><strong>₱<?php echo number_format($salesTotal, 2); ?></strong></td>
                                     <td></td>
                                 </tr>
                             </tfoot>
+<?php endif; ?>
                         </table>
                     </div>
                 </div>
@@ -311,7 +312,12 @@ ob_start();
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($servicesData as $service): ?>
+                                <?php if (empty($servicesData)): ?>
+                                <tr>
+                                    <td colspan="8" class="text-center">No data yet</td>
+                                </tr>
+                                <?php else: ?>
+<?php foreach ($servicesData as $service): ?>
                                 <tr>
                                     <td><?php echo date('M d, Y', strtotime($service['date'])); ?></td>
                                     <td><span class="srv-badge"><?php echo $service['service_id']; ?></span></td>
@@ -323,14 +329,17 @@ ob_start();
                                     <td><span class="status-badge completed"><?php echo $service['status']; ?></span></td>
                                 </tr>
                                 <?php endforeach; ?>
-                            </tbody>
-                            <tfoot>
+                                <?php endif; ?>
+</tbody>
+                            <?php if (!empty($servicesData)): ?>
+<tfoot>
                                 <tr class="total-row">
                                     <td colspan="6"><strong>TOTAL</strong></td>
-                                    <td class="amount"><strong>₱2,000.00</strong></td>
+                                    <td class="amount"><strong>₱<?php echo number_format($servicesTotal, 2); ?></strong></td>
                                     <td></td>
                                 </tr>
                             </tfoot>
+<?php endif; ?>
                         </table>
                     </div>
                 </div>
@@ -344,52 +353,25 @@ ob_start();
                         <span class="ai-badge">AI-Powered</span>
                     </div>
                     <div class="insights-content">
-                        <div class="insight-item high">
-                            <div class="insight-icon">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <div class="insight-info">
-                                <h4>Peak Sales Period Detected</h4>
-                                <p>Sales are 35% higher on weekends. Consider increasing staff during Fridays-Sundays.</p>
-                                <span class="insight-confidence">Confidence: 92%</span>
-                            </div>
+                        <div class="empty-state">
+                            <i class="fas fa-lightbulb"></i>
+                            <p>No insights yet.</p>
                         </div>
-                        <div class="insight-item medium">
-                            <div class="insight-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="insight-info">
-                                <h4>Customer Retention Opportunity</h4>
-                                <p>25% of customers haven't returned in 30 days. Launch a loyalty program to boost retention.</p>
-                                <span class="insight-confidence">Confidence: 85%</span>
-                            </div>
-                        </div>
-                        <div class="insight-item low">
-                            <div class="insight-icon">
-                                <i class="fas fa-shopping-cart"></i>
-                            </div>
-                            <div class="insight-info">
-                                <h4>Cross-Selling Potential</h4>
-                                <p>Customers buying oil changes often add air filters. Recommend bundling these services.</p>
-                                <span class="insight-confidence">Confidence: 78%</span>
-                            </div>
-                        </div>
-                        <div class="insight-item forecast">
-                            <div class="insight-icon">
-                                <i class="fas fa-crystal-ball"></i>
-                            </div>
-                            <div class="insight-info">
-                                <h4>Revenue Forecast</h4>
-                                <p>Based on current trends, predicted revenue for next month: <strong>₱125,450</strong></p>
-                                <span class="insight-confidence">Accuracy: 88%</span>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
             </div>
         </div>
     </main>
 </div>
+
+<!-- Page Data (connect to DB/backend later) -->
+<script>
+  window.REPORTS_DATA = {
+    salesTrend: <?php echo json_encode($salesData, JSON_UNESCAPED_UNICODE); ?>,
+    paymentMethods: <?php echo json_encode($servicesData, JSON_UNESCAPED_UNICODE); ?>
+  };
+</script>
 
 <?php
 $content = ob_get_clean();

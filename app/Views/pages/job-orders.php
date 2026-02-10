@@ -9,15 +9,10 @@ if (!isset($_SESSION['admin_name'])) {
 
 $adminName = $_SESSION['admin_name'] ?? 'Admin';
 
-// Sample job orders data
-$jobOrders = [
-    ['id' => 1, 'job_id' => 'JO-2024-001', 'customer_name' => 'Juan Dela Cruz', 'contact' => '+63 912 345 6789', 'vehicle_plate' => 'ABC 1234', 'vehicle_model' => 'Toyota Vios 2020', 'vehicle_type' => 'Sedan', 'services' => 'Oil Change, Brake Inspection', 'parts' => 'Engine Oil (3L), Brake Pads', 'workers' => 'Michael Chen, Lisa Wong', 'status' => 'ongoing', 'date_created' => '2024-10-20', 'notes' => 'Customer requested full inspection'],
-    ['id' => 2, 'job_id' => 'JO-2024-002', 'customer_name' => 'Maria Santos', 'contact' => '+63 923 456 7890', 'vehicle_plate' => 'XYZ 5678', 'vehicle_model' => 'Honda City 2021', 'vehicle_type' => 'Sedan', 'services' => 'Tire Replacement, Wheel Alignment', 'parts' => 'Tires (4pcs), Wheel Weights', 'workers' => 'Michael Chen', 'status' => 'completed', 'date_created' => '2024-10-19', 'notes' => 'All tires replaced successfully'],
-    ['id' => 3, 'job_id' => 'JO-2024-003', 'customer_name' => 'Roberto Lim', 'contact' => '+63 934 567 8901', 'vehicle_plate' => 'DEF 9012', 'vehicle_model' => 'Mitsubishi Montero 2019', 'vehicle_type' => 'SUV', 'services' => 'Engine Tune-up, AC Repair', 'parts' => 'Spark Plugs, AC Compressor', 'workers' => 'Lisa Wong', 'status' => 'pending', 'date_created' => '2024-10-23', 'notes' => 'Waiting for parts delivery'],
-    ['id' => 4, 'job_id' => 'JO-2024-004', 'customer_name' => 'Sofia Reyes', 'contact' => '+63 945 678 9012', 'vehicle_plate' => 'GHI 3456', 'vehicle_model' => 'Suzuki Ertiga 2022', 'vehicle_type' => 'MPV', 'services' => 'Battery Replacement, Electrical Check', 'parts' => 'Battery 12V', 'workers' => 'Michael Chen', 'status' => 'ongoing', 'date_created' => '2024-10-22', 'notes' => 'Customer will pick up tomorrow'],
-    ['id' => 5, 'job_id' => 'JO-2024-005', 'customer_name' => 'Carlos Mendoza', 'contact' => '+63 956 789 0123', 'vehicle_plate' => 'JKL 7890', 'vehicle_model' => 'Ford Ranger 2020', 'vehicle_type' => 'Pickup', 'services' => 'Transmission Repair', 'parts' => 'Transmission Fluid, Gasket', 'workers' => 'Michael Chen, Lisa Wong', 'status' => 'ongoing', 'date_created' => '2024-10-21', 'notes' => 'Major repair in progress'],
-    ['id' => 6, 'job_id' => 'JO-2024-006', 'customer_name' => 'Anna Garcia', 'contact' => '+63 967 890 1234', 'vehicle_plate' => 'MNO 2345', 'vehicle_model' => 'Hyundai Tucson 2021', 'vehicle_type' => 'SUV', 'services' => 'General Checkup', 'parts' => 'None', 'workers' => 'Lisa Wong', 'status' => 'completed', 'date_created' => '2024-10-18', 'notes' => 'No issues found'],
-];
+// Load data from repository (JSON storage now, DB later)
+require_once __DIR__ . '/../../bootstrap.php';
+$jobOrdersRepo = new JobOrdersRepository($store);
+$jobOrders = $jobOrdersRepo->seededAll();
 
 $pageTitle = "Job Orders - Machine System POS";
 ob_start();
@@ -111,6 +106,46 @@ ob_start();
             </div>
         </header>
 
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="card-icon" style="background: #3b82f6;">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="card-info">
+                    <h3 id="totalJobs">0</h3>
+                    <p>Total Jobs</p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon" style="background: #f59e0b;">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="card-info">
+                    <h3 id="pendingJobs">0</h3>
+                    <p>Pending</p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon" style="background: #8b5cf6;">
+                    <i class="fas fa-spinner"></i>
+                </div>
+                <div class="card-info">
+                    <h3 id="ongoingJobs">0</h3>
+                    <p>Ongoing</p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon" style="background: #22c55e;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="card-info">
+                    <h3 id="completedJobs">0</h3>
+                    <p>Completed</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Search and Filter Section -->
         <div class="controls-section">
             <div class="search-box">
@@ -142,55 +177,66 @@ ob_start();
                     </tr>
                 </thead>
                 <tbody id="jobOrdersTableBody">
-                    <?php foreach ($jobOrders as $job): ?>
-                    <tr data-job-id="<?php echo $job['id']; ?>" data-status="<?php echo $job['status']; ?>">
-                        <td><strong><?php echo htmlspecialchars($job['job_id']); ?></strong></td>
-                        <td>
-                            <div class="customer-info">
-                                <div class="customer-name"><?php echo htmlspecialchars($job['customer_name']); ?></div>
-                                <div class="customer-contact"><?php echo htmlspecialchars($job['contact']); ?></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="vehicle-info">
-                                <div class="vehicle-plate"><?php echo htmlspecialchars($job['vehicle_plate']); ?></div>
-                                <div class="vehicle-model"><?php echo htmlspecialchars($job['vehicle_model']); ?></div>
-                            </div>
-                        </td>
-                        <td><?php echo htmlspecialchars($job['workers']); ?></td>
-                        <td>
-                            <span class="status-badge status-<?php echo $job['status']; ?>">
-                                <?php echo ucfirst($job['status']); ?>
-                            </span>
-                        </td>
-                        <td><?php echo date('M d, Y', strtotime($job['date_created'])); ?></td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn-action btn-view" onclick="viewJob(<?php echo $job['id']; ?>)" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn-action btn-edit" onclick="editJob(<?php echo $job['id']; ?>)" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn-action btn-delete" onclick="deleteJob(<?php echo $job['id']; ?>)" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
+    <?php if (empty($jobOrders)): ?>
+        <tr class="empty-row">
+            <td colspan="7" style="text-align:center; padding: 1rem; opacity: .8;">
+                No job orders yet
+            </td>
+        </tr>
+    <?php else: ?>
+        <?php foreach ($jobOrders as $job):
+            $jobId = htmlspecialchars($job['job_id'] ?? '-', ENT_QUOTES, 'UTF-8');
+            $customerName = htmlspecialchars($job['customer_name'] ?? '-', ENT_QUOTES, 'UTF-8');
+            $contact = htmlspecialchars($job['contact'] ?? '-', ENT_QUOTES, 'UTF-8');
+            $vehiclePlate = htmlspecialchars($job['vehicle_plate'] ?? '-', ENT_QUOTES, 'UTF-8');
+            $vehicleModel = htmlspecialchars($job['vehicle_model'] ?? '-', ENT_QUOTES, 'UTF-8');
+            $workers = htmlspecialchars($job['workers'] ?? 'Unassigned', ENT_QUOTES, 'UTF-8');
+            $status = htmlspecialchars($job['status'] ?? 'pending', ENT_QUOTES, 'UTF-8');
+            $rawDate = $job['date_created'] ?? '';
+            $dateCreated = (!empty($rawDate) && strtotime($rawDate)) ? date('M d, Y', strtotime($rawDate)) : '-';
+        ?>
+        <tr data-job-id="<?php echo (int)($job['id'] ?? 0); ?>" data-status="<?php echo $status; ?>">
+            <td><strong><?php echo $jobId; ?></strong></td>
+            <td>
+                <div class="customer-info">
+                    <div class="customer-name"><?php echo $customerName; ?></div>
+                    <div class="customer-contact"><?php echo $contact; ?></div>
+                </div>
+            </td>
+            <td>
+                <div class="vehicle-info">
+                    <div class="vehicle-plate"><?php echo $vehiclePlate; ?></div>
+                    <div class="vehicle-model"><?php echo $vehicleModel; ?></div>
+                </div>
+            </td>
+            <td><?php echo $workers; ?></td>
+            <td>
+                <span class="status-badge status-<?php echo $status; ?>">
+                    <?php echo ucfirst($status); ?>
+                </span>
+            </td>
+            <td><?php echo $dateCreated; ?></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-action btn-view" onclick="viewJob(<?php echo (int)($job['id'] ?? 0); ?>)" title="View">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-action btn-edit" onclick="editJob(<?php echo (int)($job['id'] ?? 0); ?>)" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-action btn-delete" onclick="deleteJob(<?php echo (int)($job['id'] ?? 0); ?>)" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</tbody>
             </table>
         </div>
-
-        <!-- Summary Cards -->
-        <div class="summary-cards">
-            <div class="summary-card">
-                <div class="card-icon" style="background: #3b82f6;">
-                    <i class="fas fa-clipboard-list"></i>
-                </div>
-                <div class="card-info">
-                    <h3 id="totalJobs">6</h3>
+<div class="card-info">
+                    <h3 id="totalJobs">0</h3>
                     <p>Total Jobs</p>
                 </div>
             </div>
@@ -199,7 +245,7 @@ ob_start();
                     <i class="fas fa-clock"></i>
                 </div>
                 <div class="card-info">
-                    <h3 id="pendingJobs">1</h3>
+                    <h3 id="pendingJobs">0</h3>
                     <p>Pending</p>
                 </div>
             </div>
@@ -208,7 +254,7 @@ ob_start();
                     <i class="fas fa-spinner"></i>
                 </div>
                 <div class="card-info">
-                    <h3 id="ongoingJobs">3</h3>
+                    <h3 id="ongoingJobs">0</h3>
                     <p>Ongoing</p>
                 </div>
             </div>
@@ -217,7 +263,7 @@ ob_start();
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <div class="card-info">
-                    <h3 id="completedJobs">2</h3>
+                    <h3 id="completedJobs">0</h3>
                     <p>Completed</p>
                 </div>
             </div>

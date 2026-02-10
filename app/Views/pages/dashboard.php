@@ -7,30 +7,16 @@ if (!isset($_SESSION['admin_name'])) {
     exit();
 }
 
-// Sample data - will be replaced with backend logic later
+// Data placeholders (connect to DB/backend later)
 $adminName = $_SESSION['admin_name'] ?? 'Admin';
-$totalSalesToday = 12450.75;
-$transactionsToday = 23;
-$lowStockItems = 7;
-$predictedSales = 15680.50;
+$totalSalesToday = 0;
+$transactionsToday = 0;
+$lowStockItems = 0;
+$predictedSales = 0;
 
-// Sample chart data
-$dailySales = [
-    'Monday' => 8500,
-    'Tuesday' => 9200,
-    'Wednesday' => 7800,
-    'Thursday' => 11200,
-    'Friday' => 13400,
-    'Saturday' => 16800,
-    'Sunday' => 9800
-];
-
-$salesByCategory = [
-    'Parts' => 35,
-    'Services' => 28,
-    'Accessories' => 20,
-    'Repairs' => 17
-];
+// Chart placeholders
+$dailySales = [];
+$salesByCategory = [];
 
 $pageTitle = "Admin Dashboard - Machine System POS";
 ob_start();
@@ -115,7 +101,7 @@ ob_start();
             <div class="header-right">
                 <div class="notifications">
                     <i class="fas fa-bell"></i>
-                    <span class="badge">3</span>
+                    <span class="badge" style="display:none;">0</span>
                 </div>
                 <div class="profile-dropdown">
                     <div class="profile-info">
@@ -144,7 +130,7 @@ ob_start();
                         <div class="card-content">
                             <h3>₱<?php echo number_format($totalSalesToday, 2); ?></h3>
                             <p>Total Sales Today</p>
-                            <span class="trend positive">+12.5%</span>
+                            <span class="trend">—</span>
                         </div>
                     </div>
                 </div>
@@ -156,7 +142,7 @@ ob_start();
                         <div class="card-content">
                             <h3><?php echo $transactionsToday; ?></h3>
                             <p>Transactions</p>
-                            <span class="trend positive">+8.2%</span>
+                            <span class="trend">—</span>
                         </div>
                     </div>
                 </div>
@@ -168,7 +154,7 @@ ob_start();
                         <div class="card-content">
                             <h3><?php echo $lowStockItems; ?></h3>
                             <p>Low Stock Items</p>
-                            <span class="trend negative">-2 items</span>
+                            <span class="trend">—</span>
                         </div>
                     </div>
                 </div>
@@ -180,7 +166,7 @@ ob_start();
                         <div class="card-content">
                             <h3>₱<?php echo number_format($predictedSales, 2); ?></h3>
                             <p>Predicted Sales</p>
-                            <span class="trend positive">+15.3%</span>
+                            <span class="trend">—</span>
                         </div>
                     </div>
                 </div>
@@ -226,55 +212,9 @@ ob_start();
                             <a href="reports.php" class="btn btn-outline-primary btn-sm">View All</a>
                         </div>
                         <div class="activity-list">
-                            <div class="activity-item">
-                                <div class="activity-icon">
-                                    <i class="fas fa-shopping-cart"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <h6>New Sale Completed</h6>
-                                    <p>Customer: John Smith - ₱450.00</p>
-                                    <span class="time">2 minutes ago</span>
-                                </div>
-                            </div>
-                            <div class="activity-item">
-                                <div class="activity-icon">
-                                    <i class="fas fa-box"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <h6>Low Stock Alert</h6>
-                                    <p>Brake Pads - Only 3 left</p>
-                                    <span class="time">15 minutes ago</span>
-                                </div>
-                            </div>
-                            <div class="activity-item">
-                                <div class="activity-icon">
-                                    <i class="fas fa-user-plus"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <h6>New Employee Added</h6>
-                                    <p>Sarah Johnson - Cashier</p>
-                                    <span class="time">1 hour ago</span>
-                                </div>
-                            </div>
-                            <div class="activity-item">
-                                <div class="activity-icon">
-                                    <i class="fas fa-tools"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <h6>Machine Repair Service</h6>
-                                    <p>Machine ID: #M12345 - Maintenance Complete</p>
-                                    <span class="time">2 hours ago</span>
-                                </div>
-                            </div>
-                            <div class="activity-item">
-                                <div class="activity-icon">
-                                    <i class="fas fa-truck"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <h6>New Stock Arrival</h6>
-                                    <p>Engine Parts - 50 units received</p>
-                                    <span class="time">3 hours ago</span>
-                                </div>
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>No recent activity yet.</p>
                             </div>
                         </div>
                     </div>
@@ -283,6 +223,14 @@ ob_start();
         </div>
     </main>
 </div>
+
+<!-- Page Data (connect to DB/backend later) -->
+<script>
+  window.DASHBOARD_DATA = {
+    dailySales: <?php echo json_encode($dailySales, JSON_UNESCAPED_UNICODE); ?>,
+    salesByCategory: <?php echo json_encode($salesByCategory, JSON_UNESCAPED_UNICODE); ?>
+  };
+</script>
 
 <!-- Footer -->
 <footer class="dashboard-footer">

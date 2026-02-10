@@ -9,17 +9,10 @@ if (!isset($_SESSION['admin_name'])) {
 
 $adminName = $_SESSION['admin_name'] ?? 'Admin';
 
-// Sample workers data
-$workers = [
-    ['id' => 1, 'emp_id' => 'EMP-001', 'name' => 'John Smith', 'position' => 'Cashier', 'department' => 'Sales', 'email' => 'john.smith@machine.com', 'phone' => '+63 912 345 6789', 'hire_date' => '2023-01-15', 'salary' => 18000.00, 'status' => 'active', 'shift' => 'Morning', 'photo' => 'https://ui-avatars.com/api/?name=John+Smith&background=3b82f6&color=fff'],
-    ['id' => 2, 'emp_id' => 'EMP-002', 'name' => 'Sarah Johnson', 'position' => 'Manager', 'department' => 'Management', 'email' => 'sarah.johnson@machine.com', 'phone' => '+63 923 456 7890', 'hire_date' => '2022-06-20', 'salary' => 35000.00, 'status' => 'active', 'shift' => 'Full Day', 'photo' => 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=8b5cf6&color=fff'],
-    ['id' => 3, 'emp_id' => 'EMP-003', 'name' => 'Michael Chen', 'position' => 'Technician', 'department' => 'Service', 'email' => 'michael.chen@machine.com', 'phone' => '+63 934 567 8901', 'hire_date' => '2023-03-10', 'salary' => 22000.00, 'status' => 'busy', 'shift' => 'Afternoon', 'photo' => 'https://ui-avatars.com/api/?name=Michael+Chen&background=22c55e&color=fff'],
-    ['id' => 4, 'emp_id' => 'EMP-004', 'name' => 'Emily Rodriguez', 'position' => 'Cashier', 'department' => 'Sales', 'email' => 'emily.rodriguez@machine.com', 'phone' => '+63 945 678 9012', 'hire_date' => '2023-05-01', 'salary' => 18000.00, 'status' => 'active', 'shift' => 'Evening', 'photo' => 'https://ui-avatars.com/api/?name=Emily+Rodriguez&background=fb923c&color=fff'],
-    ['id' => 5, 'emp_id' => 'EMP-005', 'name' => 'David Martinez', 'position' => 'Supervisor', 'department' => 'Management', 'email' => 'david.martinez@machine.com', 'phone' => '+63 956 789 0123', 'hire_date' => '2022-11-15', 'salary' => 28000.00, 'status' => 'on_leave', 'shift' => 'Morning', 'photo' => 'https://ui-avatars.com/api/?name=David+Martinez&background=ef4444&color=fff'],
-    ['id' => 6, 'emp_id' => 'EMP-006', 'name' => 'Lisa Wong', 'position' => 'Technician', 'department' => 'Service', 'email' => 'lisa.wong@machine.com', 'phone' => '+63 967 890 1234', 'hire_date' => '2023-02-20', 'salary' => 22000.00, 'status' => 'busy', 'shift' => 'Afternoon', 'photo' => 'https://ui-avatars.com/api/?name=Lisa+Wong&background=a855f7&color=fff'],
-    ['id' => 7, 'emp_id' => 'EMP-007', 'name' => 'James Taylor', 'position' => 'Sales Associate', 'department' => 'Sales', 'email' => 'james.taylor@machine.com', 'phone' => '+63 978 901 2345', 'hire_date' => '2023-07-01', 'salary' => 20000.00, 'status' => 'active', 'shift' => 'Morning', 'photo' => 'https://ui-avatars.com/api/?name=James+Taylor&background=06b6d4&color=fff'],
-    ['id' => 8, 'emp_id' => 'EMP-008', 'name' => 'Maria Santos', 'position' => 'Inventory Clerk', 'department' => 'Operations', 'email' => 'maria.santos@machine.com', 'phone' => '+63 989 012 3456', 'hire_date' => '2022-09-10', 'salary' => 19000.00, 'status' => 'active', 'shift' => 'Full Day', 'photo' => 'https://ui-avatars.com/api/?name=Maria+Santos&background=ec4899&color=fff'],
-];
+// Load data from repository (JSON storage now, DB later)
+require_once __DIR__ . '/../../bootstrap.php';
+$workersRepo = new WorkersRepository($store);
+$workers = $workersRepo->seededAll();
 
 $pageTitle = "Workers Management - Machine System POS";
 ob_start();
@@ -206,38 +199,54 @@ ob_start();
                         </thead>
                         <tbody>
                             <?php foreach ($workers as $worker): ?>
-                            <tr data-id="<?php echo $worker['id']; ?>" data-department="<?php echo $worker['department']; ?>" data-status="<?php echo $worker['status']; ?>">
+                            <?php
+                                $wid = $worker['id'] ?? '';
+                                $dept = $worker['department'] ?? '-';
+                                $statusRaw = $worker['status'] ?? 'active';
+                                $status = preg_replace('/[^a-zA-Z0-9_-]/', '', $statusRaw);
+                                $photo = $worker['photo'] ?? 'assets/images/logo.png';
+                                $empId = $worker['emp_id'] ?? '-';
+                                $name = $worker['name'] ?? '';
+                                $position = $worker['position'] ?? '-';
+                                $email = $worker['email'] ?? '-';
+                                $phone = $worker['phone'] ?? '-';
+                                $hireDate = $worker['hire_date'] ?? '';
+                                $hireDateFmt = !empty($hireDate) ? date('M d, Y', strtotime($hireDate)) : '-';
+                                $salary = $worker['salary'] ?? 0;
+                                $shift = $worker['shift'] ?? '-';
+                            ?>
+                            <tr data-id="<?php echo htmlspecialchars($wid, ENT_QUOTES); ?>" data-department="<?php echo htmlspecialchars($dept, ENT_QUOTES); ?>" data-status="<?php echo htmlspecialchars($status, ENT_QUOTES); ?>">
                                 <td>
                                     <div class="worker-photo">
-                                        <img src="<?php echo $worker['photo']; ?>" alt="<?php echo $worker['name']; ?>">
+                                        <img src="<?php echo htmlspecialchars($photo, ENT_QUOTES); ?>" alt="<?php echo htmlspecialchars($name); ?>">
                                     </div>
                                 </td>
-                                <td><span class="emp-id-badge"><?php echo $worker['emp_id']; ?></span></td>
-                                <td class="worker-name"><?php echo htmlspecialchars($worker['name']); ?></td>
-                                <td><?php echo $worker['position']; ?></td>
-                                <td><span class="dept-badge"><?php echo $worker['department']; ?></span></td>
+                                <td><span class="emp-id-badge"><?php echo htmlspecialchars($empId); ?></span></td>
+                                <td class="worker-name"><?php echo htmlspecialchars($name); ?></td>
+                                <td><?php echo htmlspecialchars($position); ?></td>
+                                <td><span class="dept-badge"><?php echo htmlspecialchars($dept); ?></span></td>
                                 <td>
                                     <div class="contact-info">
-                                        <span><i class="fas fa-envelope"></i> <?php echo $worker['email']; ?></span>
-                                        <span><i class="fas fa-phone"></i> <?php echo $worker['phone']; ?></span>
+                                        <span><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($email); ?></span>
+                                        <span><i class="fas fa-phone"></i> <?php echo htmlspecialchars($phone); ?></span>
                                     </div>
                                 </td>
-                                <td><?php echo date('M d, Y', strtotime($worker['hire_date'])); ?></td>
-                                <td class="salary">₱<?php echo number_format($worker['salary'], 2); ?></td>
-                                <td><span class="shift-badge"><?php echo $worker['shift']; ?></span></td>
+                                <td><?php echo $hireDateFmt; ?></td>
+                                <td class="salary">₱<?php echo number_format((float)$salary, 2); ?></td>
+                                <td><span class="shift-badge"><?php echo htmlspecialchars($shift); ?></span></td>
                                 <td>
-                                    <span class="status-badge <?php echo $worker['status']; ?>">
-                                        <?php echo ucfirst(str_replace('_', ' ', $worker['status'])); ?>
+                                    <span class="status-badge <?php echo htmlspecialchars($status, ENT_QUOTES); ?>">
+                                        <?php echo ucfirst(str_replace('_', ' ', $status)); ?>
                                     </span>
                                 </td>
                                 <td class="actions">
-                                    <button class="action-icon view-btn" data-id="<?php echo $worker['id']; ?>" title="View Profile">
+                                    <button class="action-icon view-btn" data-id="<?php echo htmlspecialchars($wid, ENT_QUOTES); ?>" title="View Profile">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="action-icon edit-btn" data-id="<?php echo $worker['id']; ?>" title="Edit">
+                                    <button class="action-icon edit-btn" data-id="<?php echo htmlspecialchars($wid, ENT_QUOTES); ?>" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="action-icon delete-btn" data-id="<?php echo $worker['id']; ?>" title="Delete">
+                                    <button class="action-icon delete-btn" data-id="<?php echo htmlspecialchars($wid, ENT_QUOTES); ?>" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </td>

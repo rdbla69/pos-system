@@ -1,0 +1,18 @@
+[
+    {
+        "id": 1,
+        "sku": "MCH-0001",
+        "name": "Cutting Disc 4\"",
+        "category": "Tools",
+        "price": 55,
+        "stock": 120
+    },
+    {
+        "id": 2,
+        "sku": "MCH-0002",
+        "name": "Welding Rod 2.5mm",
+        "category": "Materials",
+        "price": 210,
+        "stock": 40
+    }
+]

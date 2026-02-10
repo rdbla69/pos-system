@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
 
-    // Load workers from table
-    loadWorkersFromTable();
+    // Load workers from API (JSON store now, DB later)
+    loadWorkersFromApi();
 
     // Initialize modals
     initModals();
@@ -42,8 +42,19 @@ function updateDateTime() {
     }
 }
 
-// Load workers from existing table
-function loadWorkersFromTable() {
+// Load workers from API
+async function loadWorkersFromApi() {
+    try {
+        workers = await Api.get('workers.php');
+        refreshTable();
+    } catch (e) {
+        console.error(e);
+        loadWorkersFromTableFallback();
+    }
+}
+
+// Fallback: Load workers from existing table (legacy mode)
+function loadWorkersFromTableFallback() {
     const rows = document.querySelectorAll('#workersTable tbody tr');
     workers = [];
     
@@ -116,7 +127,7 @@ function initModals() {
 }
 
 // Save worker (add or edit)
-function saveWorker() {
+async function saveWorker() {
     const formData = {
         id: editingWorkerId || Date.now(),
         emp_id: document.getElementById('empId').value,
@@ -132,22 +143,20 @@ function saveWorker() {
         photo: `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('workerName').value)}&background=3b82f6&color=fff`
     };
 
-    if (editingWorkerId) {
-        // Update existing worker
-        const index = workers.findIndex(w => w.id === editingWorkerId);
-        if (index !== -1) {
-            workers[index] = formData;
+    try {
+        if (editingWorkerId) {
+            await Api.put(`workers.php?id=${editingWorkerId}`, formData);
+            showNotification('Worker updated successfully!', 'success');
+        } else {
+            await Api.post('workers.php', formData);
+            showNotification('Worker added successfully!', 'success');
         }
-        showNotification('Worker updated successfully!', 'success');
-    } else {
-        // Add new worker
-        workers.push(formData);
-        showNotification('Worker added successfully!', 'success');
+        document.getElementById('workerModal').classList.remove('active');
+        await loadWorkersFromApi();
+    } catch (e) {
+        console.error(e);
+        showNotification(e.message || 'Failed to save worker', 'error');
     }
-
-    // Close modal and refresh table
-    document.getElementById('workerModal').classList.remove('active');
-    refreshTable();
 }
 
 // Refresh table
@@ -302,14 +311,19 @@ function editWorker(id) {
 }
 
 // Delete worker
-function deleteWorker(id) {
+async function deleteWorker(id) {
     const worker = workers.find(w => w.id === id);
     if (!worker) return;
 
-    if (confirm(`Are you sure you want to delete "${worker.name}"?`)) {
-        workers = workers.filter(w => w.id !== id);
+    if (!confirm(`Are you sure you want to delete "${worker.name}"?`)) return;
+
+    try {
+        await Api.del(`workers.php?id=${id}`);
         showNotification('Worker deleted successfully!', 'success');
-        refreshTable();
+        await loadWorkersFromApi();
+    } catch (e) {
+        console.error(e);
+        showNotification(e.message || 'Failed to delete worker', 'error');
     }
 }
 

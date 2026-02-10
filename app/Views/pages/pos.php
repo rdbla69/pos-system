@@ -9,17 +9,10 @@ if (!isset($_SESSION['admin_name'])) {
 
 $adminName = $_SESSION['admin_name'] ?? 'Admin';
 
-// Sample products/services data
-$products = [
-    ['id' => 1, 'name' => 'Engine Oil Change', 'category' => 'Service', 'price' => 45.00, 'stock' => 999],
-    ['id' => 2, 'name' => 'Brake Pads', 'category' => 'Parts', 'price' => 85.00, 'stock' => 25],
-    ['id' => 3, 'name' => 'Air Filter', 'category' => 'Parts', 'price' => 25.00, 'stock' => 50],
-    ['id' => 4, 'name' => 'Tire Rotation', 'category' => 'Service', 'price' => 35.00, 'stock' => 999],
-    ['id' => 5, 'name' => 'Spark Plugs', 'category' => 'Parts', 'price' => 65.00, 'stock' => 40],
-    ['id' => 6, 'name' => 'Battery', 'category' => 'Parts', 'price' => 125.00, 'stock' => 15],
-    ['id' => 7, 'name' => 'Wheel Alignment', 'category' => 'Service', 'price' => 75.00, 'stock' => 999],
-    ['id' => 8, 'name' => 'Transmission Fluid', 'category' => 'Parts', 'price' => 55.00, 'stock' => 30],
-];
+// Load data from repository (JSON storage now, DB later)
+require_once __DIR__ . '/../../bootstrap.php';
+$productsRepo = new ProductsRepository($store);
+$products = $productsRepo->seededAll();
 
 $pageTitle = "POS System - Machine System POS";
 ob_start();
@@ -151,7 +144,7 @@ ob_start();
                     <!-- Products Grid -->
                     <div class="products-grid" id="productsGrid">
                         <?php foreach ($products as $product): ?>
-                        <div class="product-card" data-category="<?php echo $product['category']; ?>" data-product='<?php echo json_encode($product); ?>'>
+                        <div class="product-card" data-id="<?php echo (int)$product['id']; ?>" data-name="<?php echo htmlspecialchars($product['name'], ENT_QUOTES); ?>" data-price="<?php echo (float)$product['price']; ?>" data-category="<?php echo $product['category']; ?>">
                             <div class="product-icon">
                                 <i class="fas fa-<?php echo $product['category'] === 'Service' ? 'tools' : 'cog'; ?>"></i>
                             </div>

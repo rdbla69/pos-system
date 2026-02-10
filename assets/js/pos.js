@@ -56,7 +56,12 @@ function initProductCards() {
     
     productCards.forEach(card => {
         card.addEventListener('click', function() {
-            const product = JSON.parse(this.dataset.product);
+            const product = {
+                id: parseInt(this.dataset.id, 10),
+                name: this.dataset.name,
+                price: parseFloat(this.dataset.price),
+                category: this.dataset.category
+            };
             addToCart(product);
             
             // Visual feedback
@@ -110,9 +115,8 @@ function initSearch() {
         const products = document.querySelectorAll('.product-card');
         
         products.forEach(product => {
-            const productData = JSON.parse(product.dataset.product);
-            const name = productData.name.toLowerCase();
-            const category = productData.category.toLowerCase();
+            const name = (product.dataset.name || '').toLowerCase();
+            const category = (product.dataset.category || '').toLowerCase();
             
             if (name.includes(searchTerm) || category.includes(searchTerm)) {
                 product.style.display = 'flex';
@@ -323,6 +327,9 @@ function processCheckout() {
             change: amountReceived - total
         }
     };
+
+    // Persist transaction (JSON store now, DB later)
+    Api.post('transactions.php', receipt).catch((e) => console.error('Failed to save transaction', e));
     
     // Update stats
     todaySales += total;

@@ -9,21 +9,14 @@ if (!isset($_SESSION['admin_name'])) {
 
 $adminName = $_SESSION['admin_name'] ?? 'Admin';
 
-// Sample messages data
-$messages = [
-    ['id' => 1, 'category' => 'workers', 'sender' => 'Michael Chen', 'sender_role' => 'Technician', 'subject' => 'Job Order JO-2024-001 Update', 'preview' => 'The oil change has been completed. Customer can pick up the vehicle.', 'message' => 'Hi, I wanted to update you that Job Order JO-2024-001 for Juan Dela Cruz has been completed. The oil change and brake inspection are done. The vehicle is ready for pickup.', 'timestamp' => '2024-10-23 14:30:00', 'status' => 'unread', 'avatar' => 'https://ui-avatars.com/api/?name=Michael+Chen&background=22c55e&color=fff'],
-    ['id' => 2, 'category' => 'clients', 'sender' => 'Maria Santos', 'sender_role' => 'Client', 'subject' => 'Inquiry about tire replacement', 'preview' => 'Hello, I would like to inquire about the cost of tire replacement for my Honda City.', 'message' => 'Hello, I would like to inquire about the cost of tire replacement for my Honda City 2021. Can you also let me know if you have stock available? Thank you!', 'timestamp' => '2024-10-23 13:15:00', 'status' => 'read', 'avatar' => 'https://ui-avatars.com/api/?name=Maria+Santos&background=ec4899&color=fff'],
-    ['id' => 3, 'category' => 'system', 'sender' => 'System Alert', 'sender_role' => 'Automated', 'subject' => 'Low Stock Warning', 'preview' => 'Engine Oil (3L) stock is running low. Current quantity: 5 units.', 'message' => 'ALERT: Engine Oil (3L) stock is running low. Current quantity: 5 units. Please reorder soon to avoid stock-out.', 'timestamp' => '2024-10-23 12:00:00', 'status' => 'unread', 'avatar' => 'https://ui-avatars.com/api/?name=System&background=ef4444&color=fff'],
-    ['id' => 4, 'category' => 'workers', 'sender' => 'Lisa Wong', 'sender_role' => 'Technician', 'subject' => 'Parts Request for JO-2024-005', 'preview' => 'Need to order transmission gasket for the Ford Ranger repair.', 'message' => 'Hi, for Job Order JO-2024-005 (Carlos Mendoza - Ford Ranger), we need to order a transmission gasket. The current one is damaged beyond repair. Can you process the order?', 'timestamp' => '2024-10-23 11:45:00', 'status' => 'read', 'avatar' => 'https://ui-avatars.com/api/?name=Lisa+Wong&background=a855f7&color=fff'],
-    ['id' => 5, 'category' => 'clients', 'sender' => 'Roberto Lim', 'sender_role' => 'Client', 'subject' => 'When will my vehicle be ready?', 'preview' => 'Hi, I dropped off my Mitsubishi Montero yesterday for engine tune-up. Just checking on the status.', 'message' => 'Hi, I dropped off my Mitsubishi Montero yesterday for engine tune-up and AC repair. Just checking on the status. When can I expect my vehicle to be ready? Thanks!', 'timestamp' => '2024-10-23 10:20:00', 'status' => 'unread', 'avatar' => 'https://ui-avatars.com/api/?name=Roberto+Lim&background=3b82f6&color=fff'],
-    ['id' => 6, 'category' => 'workers', 'sender' => 'John Smith', 'sender_role' => 'Cashier', 'subject' => 'Payment received for JO-2024-002', 'preview' => 'Maria Santos has paid ₱4,500 for the tire replacement service.', 'message' => 'Payment confirmation: Maria Santos has paid ₱4,500 for Job Order JO-2024-002 (tire replacement service). Payment method: Cash. Receipt issued.', 'timestamp' => '2024-10-23 09:30:00', 'status' => 'read', 'avatar' => 'https://ui-avatars.com/api/?name=John+Smith&background=3b82f6&color=fff'],
-    ['id' => 7, 'category' => 'system', 'sender' => 'System Alert', 'sender_role' => 'Automated', 'subject' => 'Scheduled Maintenance Reminder', 'preview' => 'Database backup scheduled for tonight at 11:00 PM.', 'message' => 'REMINDER: Scheduled database backup will run tonight at 11:00 PM. Expected duration: 15-30 minutes. System will remain operational.', 'timestamp' => '2024-10-23 08:00:00', 'status' => 'read', 'avatar' => 'https://ui-avatars.com/api/?name=System&background=f59e0b&color=fff'],
-    ['id' => 8, 'category' => 'clients', 'sender' => 'Sofia Reyes', 'sender_role' => 'Client', 'subject' => 'Thank you for the excellent service!', 'preview' => 'I just picked up my Suzuki Ertiga. The battery replacement was done perfectly.', 'message' => 'I just picked up my Suzuki Ertiga. The battery replacement was done perfectly and the electrical check found no issues. Thank you for the excellent and fast service! Will definitely recommend you to my friends.', 'timestamp' => '2024-10-22 16:45:00', 'status' => 'read', 'avatar' => 'https://ui-avatars.com/api/?name=Sofia+Reyes&background=fb923c&color=fff'],
-];
+// Load data from repository (JSON storage now, DB later)
+require_once __DIR__ . '/../../bootstrap.php';
+$messagesRepo = new MessagesRepository($store);
+$messages = $messagesRepo->seededAll();
 
 // Calculate unread count
 $unreadCount = count(array_filter($messages, function($msg) {
-    return $msg['status'] === 'unread';
+    return (($msg['status'] ?? 'unread') === 'unread');
 }));
 
 $pageTitle = "Messaging Center - Machine System POS";
@@ -180,23 +173,34 @@ ob_start();
 
                 <div class="message-list" id="messageList">
                     <?php foreach ($messages as $msg): ?>
-                    <div class="message-item <?php echo $msg['status']; ?>" data-id="<?php echo $msg['id']; ?>" data-category="<?php echo $msg['category']; ?>" data-status="<?php echo $msg['status']; ?>">
+                    <?php
+                        $mStatus = preg_replace('/[^a-zA-Z0-9_-]/','', ($msg['status'] ?? 'unread'));
+                        $mId = $msg['id'] ?? '';
+                        $mCat = $msg['category'] ?? 'all';
+                        $mAvatar = $msg['avatar'] ?? 'assets/images/logo.png';
+                        $mSender = $msg['sender'] ?? 'Unknown';
+                        $mTs = $msg['timestamp'] ?? '';
+                        $mTime = !empty($mTs) ? date('M d, g:i A', strtotime($mTs)) : '';
+                        $mSubject = $msg['subject'] ?? '(no subject)';
+                        $mPreview = $msg['preview'] ?? '';
+                    ?>
+                    <div class="message-item <?php echo htmlspecialchars($mStatus, ENT_QUOTES); ?>" data-id="<?php echo htmlspecialchars($mId, ENT_QUOTES); ?>" data-category="<?php echo htmlspecialchars($mCat, ENT_QUOTES); ?>" data-status="<?php echo htmlspecialchars($mStatus, ENT_QUOTES); ?>">
                         <div class="message-avatar">
-                            <img src="<?php echo $msg['avatar']; ?>" alt="<?php echo $msg['sender']; ?>">
-                            <?php if ($msg['status'] === 'unread'): ?>
+                            <img src="<?php echo htmlspecialchars($mAvatar, ENT_QUOTES); ?>" alt="<?php echo htmlspecialchars($mSender); ?>">
+                            <?php if (($msg['status'] ?? 'unread') === 'unread'): ?>
                             <span class="unread-dot"></span>
                             <?php endif; ?>
                         </div>
                         <div class="message-info">
                             <div class="message-header">
-                                <span class="sender-name"><?php echo htmlspecialchars($msg['sender']); ?></span>
-                                <span class="message-time"><?php echo date('M d, g:i A', strtotime($msg['timestamp'])); ?></span>
+                                <span class="sender-name"><?php echo htmlspecialchars($mSender); ?></span>
+                                <span class="message-time"><?php echo htmlspecialchars($mTime); ?></span>
                             </div>
-                            <div class="message-subject"><?php echo htmlspecialchars($msg['subject']); ?></div>
-                            <div class="message-preview"><?php echo htmlspecialchars($msg['preview']); ?></div>
+                            <div class="message-subject"><?php echo htmlspecialchars($mSubject); ?></div>
+                            <div class="message-preview"><?php echo htmlspecialchars($mPreview); ?></div>
                             <div class="message-meta">
-                                <span class="category-badge badge-<?php echo $msg['category']; ?>">
-                                    <?php echo ucfirst($msg['category']); ?>
+                                <span class="category-badge badge-<?php echo htmlspecialchars($mCat, ENT_QUOTES); ?>">
+                                    <?php echo htmlspecialchars(ucfirst($mCat)); ?>
                                 </span>
                             </div>
                         </div>

@@ -9,26 +9,13 @@ if (!isset($_SESSION['admin_name'])) {
 
 $adminName = $_SESSION['admin_name'] ?? 'Admin';
 
-// Sample inventory data
-$inventory = [
-    ['id' => 1, 'sku' => 'ENG-001', 'name' => 'Engine Oil Change', 'category' => 'Service', 'quantity' => 999, 'unit' => 'service', 'cost' => 25.00, 'price' => 45.00, 'supplier' => 'LubeTech', 'reorder_level' => 0, 'status' => 'in_stock', 'last_updated' => '2024-01-15'],
-    ['id' => 2, 'sku' => 'BRK-002', 'name' => 'Brake Pads', 'category' => 'Parts', 'quantity' => 25, 'unit' => 'set', 'cost' => 50.00, 'price' => 85.00, 'supplier' => 'BrakeMaster', 'reorder_level' => 20, 'status' => 'in_stock', 'last_updated' => '2024-01-20'],
-    ['id' => 3, 'sku' => 'AIR-003', 'name' => 'Air Filter', 'category' => 'Parts', 'quantity' => 50, 'unit' => 'piece', 'cost' => 12.00, 'price' => 25.00, 'supplier' => 'FilterPro', 'reorder_level' => 30, 'status' => 'in_stock', 'last_updated' => '2024-01-18'],
-    ['id' => 4, 'sku' => 'TIR-004', 'name' => 'Tire Rotation', 'category' => 'Service', 'quantity' => 999, 'unit' => 'service', 'cost' => 15.00, 'price' => 35.00, 'supplier' => 'N/A', 'reorder_level' => 0, 'status' => 'in_stock', 'last_updated' => '2024-01-10'],
-    ['id' => 5, 'sku' => 'SPK-005', 'name' => 'Spark Plugs', 'category' => 'Parts', 'quantity' => 8, 'unit' => 'set', 'cost' => 35.00, 'price' => 65.00, 'supplier' => 'IgniteParts', 'reorder_level' => 15, 'status' => 'low_stock', 'last_updated' => '2024-01-22'],
-    ['id' => 6, 'sku' => 'BAT-006', 'name' => 'Battery', 'category' => 'Parts', 'quantity' => 15, 'unit' => 'piece', 'cost' => 75.00, 'price' => 125.00, 'supplier' => 'PowerCell', 'reorder_level' => 10, 'status' => 'in_stock', 'last_updated' => '2024-01-19'],
-    ['id' => 7, 'sku' => 'WHE-007', 'name' => 'Wheel Alignment', 'category' => 'Service', 'quantity' => 999, 'unit' => 'service', 'cost' => 40.00, 'price' => 75.00, 'supplier' => 'N/A', 'reorder_level' => 0, 'status' => 'in_stock', 'last_updated' => '2024-01-12'],
-    ['id' => 8, 'sku' => 'TRN-008', 'name' => 'Transmission Fluid', 'category' => 'Parts', 'quantity' => 3, 'unit' => 'liter', 'cost' => 30.00, 'price' => 55.00, 'supplier' => 'FluidTech', 'reorder_level' => 20, 'status' => 'critical', 'last_updated' => '2024-01-23'],
-];
+// Load data from repository (JSON storage now, DB later)
+require_once __DIR__ . '/../../bootstrap.php';
+$inventoryRepo = new InventoryRepository($store);
+$inventory = $inventoryRepo->seededAll();
 
-// Stock movement log
-$stockMovements = [
-    ['date' => '2024-01-23 10:30', 'item' => 'Brake Pads', 'type' => 'sale', 'quantity' => -2, 'reference' => 'TXN-001', 'user' => 'Admin'],
-    ['date' => '2024-01-23 09:15', 'item' => 'Air Filter', 'type' => 'restock', 'quantity' => 20, 'reference' => 'PO-045', 'user' => 'Manager'],
-    ['date' => '2024-01-22 16:45', 'item' => 'Spark Plugs', 'type' => 'sale', 'quantity' => -4, 'reference' => 'TXN-002', 'user' => 'Admin'],
-    ['date' => '2024-01-22 14:20', 'item' => 'Battery', 'type' => 'restock', 'quantity' => 5, 'reference' => 'PO-044', 'user' => 'Manager'],
-    ['date' => '2024-01-22 11:00', 'item' => 'Transmission Fluid', 'type' => 'sale', 'quantity' => -3, 'reference' => 'TXN-003', 'user' => 'Admin'],
-];
+// Stock movement placeholders (still static; wire to DB later)
+$stockMovements = $store->read('stock_movements', []);
 
 $pageTitle = "Inventory Management - Machine System POS";
 ob_start();
@@ -129,24 +116,7 @@ ob_start();
         <!-- Inventory Content -->
         <div class="inventory-content">
             <!-- Low Stock Alerts -->
-            <div class="alerts-section" id="lowStockAlerts">
-                <div class="alert-card critical">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <div class="alert-content">
-                        <h4>Critical Stock Level</h4>
-                        <p>Transmission Fluid (3 units) - Reorder immediately!</p>
-                    </div>
-                    <button class="alert-action">Reorder</button>
-                </div>
-                <div class="alert-card warning">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <div class="alert-content">
-                        <h4>Low Stock Warning</h4>
-                        <p>Spark Plugs (8 units) - Below reorder level</p>
-                    </div>
-                    <button class="alert-action">Reorder</button>
-                </div>
-            </div>
+            <div class="alerts-section" id="lowStockAlerts" style="display:none;"></div>
 
             <!-- Search and Filters -->
             <div class="inventory-controls">

@@ -14,6 +14,24 @@ document.addEventListener('DOMContentLoaded', function() {
     initExportButtons();
 });
 
+function getReportsData() {
+    const data = (window && window.REPORTS_DATA) ? window.REPORTS_DATA : {};
+    return {
+        salesTrend: Array.isArray(data.salesTrend) ? data.salesTrend : [],
+        paymentMethods: Array.isArray(data.paymentMethods) ? data.paymentMethods : []
+    };
+}
+
+function renderEmptyChart(canvasEl, message) {
+    if (!canvasEl) return;
+    const container = canvasEl.parentElement;
+    if (!container) return;
+    container.innerHTML = `<div class="chart-empty-state">
+        <div class="chart-empty-icon"><i class="fas fa-chart-line"></i></div>
+        <p>${message}</p>
+    </div>`;
+}
+
 // Update date and time
 function updateDateTime() {
     const now = new Date();
@@ -33,27 +51,42 @@ function updateDateTime() {
     }
 }
 
+// Generate date labels for the last N days (no hardcoded arrays)
+function generateDateLabels(n) {
+    const labels = [];
+    const today = new Date();
+    for (let i = n - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    }
+    return labels;
+}
+
 // Initialize charts
 function initCharts() {
     // Sales Trend Chart
     const salesTrendCtx = document.getElementById('salesTrendChart');
     if (salesTrendCtx) {
-        new Chart(salesTrendCtx, {
+        const { salesTrend } = getReportsData();
+        if (!salesTrend || salesTrend.length === 0) {
+            renderEmptyChart(salesTrendCtx, 'No transactions yet.');
+        } else {
+            new Chart(salesTrendCtx, {
             type: 'line',
             data: {
-                labels: ['Jan 21', 'Jan 22', 'Jan 23'],
+                labels: salesTrend.map(d => d.label ?? ''),
                 datasets: [{
                     label: 'Daily Sales (₱)',
-                    data: [1215.50, 1375.00, 1430.00],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.4,
-                    fill: true,
+                    data: salesTrend.map(d => Number(d.value ?? 0)),
+                    borderWidth: 2,
+                    tension: 0,
+                    fill: false,
                     pointBackgroundColor: '#3b82f6',
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 7
+                    pointRadius: 3,
+                    pointHoverRadius: 5
                 }]
             },
             options: {
@@ -101,18 +134,23 @@ function initCharts() {
                     }
                 }
             }
-        });
+            });
+        }
     }
 
     // Payment Method Chart
     const paymentMethodCtx = document.getElementById('paymentMethodChart');
     if (paymentMethodCtx) {
-        new Chart(paymentMethodCtx, {
+        const { paymentMethods } = getReportsData();
+        if (!paymentMethods || paymentMethods.length === 0) {
+            renderEmptyChart(paymentMethodCtx, 'No payment data yet.');
+        } else {
+            new Chart(paymentMethodCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Cash', 'Card', 'Digital'],
+                labels: paymentMethods.map(p => p.label ?? ''),
                 datasets: [{
-                    data: [45, 35, 20],
+                    data: paymentMethods.map(p => Number(p.value ?? 0)),
                     backgroundColor: [
                         '#22c55e',
                         '#3b82f6',
@@ -151,7 +189,8 @@ function initCharts() {
                     }
                 }
             }
-        });
+            });
+        }
     }
 }
 

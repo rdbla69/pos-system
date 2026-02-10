@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
 
-    // Load inventory from table
-    loadInventoryFromTable();
+    // Load inventory from API (JSON store now, DB later)
+    loadInventoryFromApi();
 
     // Initialize modal
     initModal();
@@ -45,24 +45,37 @@ function updateDateTime() {
     }
 }
 
-// Load inventory from existing table
-function loadInventoryFromTable() {
+// Load inventory from API
+async function loadInventoryFromApi() {
+    try {
+        inventory = await Api.get('inventory.php');
+        refreshTable();
+    } catch (e) {
+        console.error(e);
+        // If API isn't reachable, keep current table state as fallback
+        loadInventoryFromTableFallback();
+    }
+}
+
+// Fallback: Load inventory from existing table (legacy mode)
+function loadInventoryFromTableFallback() {
     const rows = document.querySelectorAll('#inventoryTable tbody tr');
     inventory = [];
-    
-    rows.forEach((row, index) => {
+    rows.forEach((row) => {
         const cells = row.querySelectorAll('td');
+        if (!cells.length) return;
         inventory.push({
-            id: parseInt(row.dataset.id),
-            sku: cells[0].querySelector('.sku-badge').textContent,
-            name: cells[1].textContent,
-            category: cells[2].querySelector('.category-badge').textContent,
-            quantity: cells[3].textContent === '∞' ? 999 : parseInt(cells[3].textContent),
-            unit: cells[4].textContent,
-            cost: parseFloat(cells[5].textContent.replace('₱', '').replace(',', '')),
-            price: parseFloat(cells[6].textContent.replace('₱', '').replace(',', '')),
-            supplier: cells[7].textContent,
-            status: row.dataset.status
+            id: parseInt(row.dataset.id || '0'),
+            sku: cells[0].querySelector('.sku-badge')?.textContent || '',
+            name: cells[1]?.textContent || '',
+            category: cells[2].querySelector('.category-badge')?.textContent || '',
+            quantity: (cells[3]?.textContent || '').trim() === '∞' ? 999 : parseInt(cells[3]?.textContent || '0'),
+            unit: cells[4]?.textContent || '',
+            cost: parseFloat((cells[5]?.textContent || '0').replace('₱', '').replace(',', '')),
+            price: parseFloat((cells[6]?.textContent || '0').replace('₱', '').replace(',', '')),
+            supplier: cells[7]?.textContent || '',
+            reorder_level: 0,
+            status: row.dataset.status || 'in_stock'
         });
     });
 }
@@ -103,9 +116,8 @@ function initModal() {
 }
 
 // Save item (add or edit)
-function saveItem() {
+async function saveItem() {
     const formData = {
-        id: editingItemId || Date.now(),
         sku: document.getElementById('itemSku').value,
         name: document.getElementById('itemName').value,
         category: document.getElementById('itemCategory').value,
@@ -128,22 +140,20 @@ function saveItem() {
         formData.status = 'in_stock';
     }
 
-    if (editingItemId) {
-        // Update existing item
-        const index = inventory.findIndex(item => item.id === editingItemId);
-        if (index !== -1) {
-            inventory[index] = formData;
+    try {
+        if (editingItemId) {
+            await Api.put(`inventory.php?id=${editingItemId}`, formData);
+            showNotification('Item updated successfully!', 'success');
+        } else {
+            await Api.post('inventory.php', formData);
+            showNotification('Item added successfully!', 'success');
         }
-        showNotification('Item updated successfully!', 'success');
-    } else {
-        // Add new item
-        inventory.push(formData);
-        showNotification('Item added successfully!', 'success');
+        document.getElementById('itemModal').classList.remove('active');
+        await loadInventoryFromApi();
+    } catch (e) {
+        console.error(e);
+        showNotification(e.message || 'Failed to save item', 'error');
     }
-
-    // Close modal and refresh table
-    document.getElementById('itemModal').classList.remove('active');
-    refreshTable();
 }
 
 // Refresh table
@@ -229,7 +239,7 @@ function editItem(id) {
 }
 
 // Adjust stock
-function adjustStock(id) {
+async function adjustStock(id) {
     const item = inventory.find(i => i.id === id);
     if (!item) return;
 
@@ -256,19 +266,33 @@ function adjustStock(id) {
         item.status = 'in_stock';
     }
 
-    showNotification(`Stock adjusted: ${adjustmentValue > 0 ? '+' : ''}${adjustmentValue}`, 'success');
-    refreshTable();
+    try {
+        await Api.put(`inventory.php?id=${id}`, {
+            quantity: item.quantity,
+            status: item.status
+        });
+        showNotification(`Stock adjusted: ${adjustmentValue > 0 ? '+' : ''}${adjustmentValue}`, 'success');
+        await loadInventoryFromApi();
+    } catch (e) {
+        console.error(e);
+        showNotification(e.message || 'Failed to adjust stock', 'error');
+    }
 }
 
 // Delete item
-function deleteItem(id) {
+async function deleteItem(id) {
     const item = inventory.find(i => i.id === id);
     if (!item) return;
 
-    if (confirm(`Are you sure you want to delete "${item.name}"?`)) {
-        inventory = inventory.filter(i => i.id !== id);
+    if (!confirm(`Are you sure you want to delete "${item.name}"?`)) return;
+
+    try {
+        await Api.del(`inventory.php?id=${id}`);
         showNotification('Item deleted successfully!', 'success');
-        refreshTable();
+        await loadInventoryFromApi();
+    } catch (e) {
+        console.error(e);
+        showNotification(e.message || 'Failed to delete item', 'error');
     }
 }
 

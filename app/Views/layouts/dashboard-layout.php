@@ -36,6 +36,7 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/pos-system/assets/js/apiClient.js"></script>
     <?php if (strpos($_SERVER['PHP_SELF'], 'pos.php') !== false): ?>
     <script src="/pos-system/assets/js/pos.js"></script>
     <?php elseif (strpos($_SERVER['PHP_SELF'], 'inventory.php') !== false): ?>

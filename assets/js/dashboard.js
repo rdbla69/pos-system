@@ -21,6 +21,24 @@ document.addEventListener('DOMContentLoaded', function() {
     animateCards();
 });
 
+function getDashboardData() {
+    const data = (window && window.DASHBOARD_DATA) ? window.DASHBOARD_DATA : {};
+    return {
+        dailySales: Array.isArray(data.dailySales) ? data.dailySales : [],
+        salesByCategory: Array.isArray(data.salesByCategory) ? data.salesByCategory : []
+    };
+}
+
+function renderEmptyChart(canvasEl, message) {
+    if (!canvasEl) return;
+    const container = canvasEl.parentElement;
+    if (!container) return;
+    container.innerHTML = `<div class="chart-empty-state">
+        <div class="chart-empty-icon"><i class="fas fa-chart-line"></i></div>
+        <p>${message}</p>
+    </div>`;
+}
+
 // Update date and time
 function updateDateTime() {
     const now = new Date();
@@ -40,27 +58,45 @@ function updateDateTime() {
     }
 }
 
+// Generate labels for the last N days (no hardcoded arrays)
+function generateLastNDaysLabels(n) {
+    const labels = [];
+    const today = new Date();
+    for (let i = n - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        labels.push(d.toLocaleDateString('en-US', { weekday: 'long' }));
+    }
+    return labels;
+}
+
 // Initialize Daily Sales Chart
 function initDailySalesChart() {
     const ctx = document.getElementById('dailySalesChart');
     if (!ctx) return;
 
+    const { dailySales } = getDashboardData();
+    // No transactions yet: don't render demo lines/points.
+    if (!dailySales || dailySales.length === 0) {
+        renderEmptyChart(ctx, 'No transactions yet.');
+        return;
+    }
+
     const chart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+            labels: dailySales.map(d => d.label ?? ''),
             datasets: [{
                 label: 'Sales ($)',
-                data: [8500, 9200, 7800, 11200, 13400, 16800, 9800],
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4,
-                fill: true,
+                data: dailySales.map(d => Number(d.value ?? 0)),
+                borderWidth: 2,
+                tension: 0,
+                fill: false,
                 pointBackgroundColor: '#3b82f6',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
-                pointRadius: 5,
-                pointHoverRadius: 7
+                pointRadius: 3,
+                pointHoverRadius: 5
             }]
         },
         options: {
@@ -116,12 +152,19 @@ function initCategoryChart() {
     const ctx = document.getElementById('categoryChart');
     if (!ctx) return;
 
+    const { salesByCategory } = getDashboardData();
+    // No transactions yet: don't render demo donut/legend.
+    if (!salesByCategory || salesByCategory.length === 0) {
+        renderEmptyChart(ctx, 'No sales data yet.');
+        return;
+    }
+
     const chart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Parts', 'Services', 'Accessories', 'Repairs'],
+            labels: salesByCategory.map(c => c.label ?? ''),
             datasets: [{
-                data: [35, 28, 20, 17],
+                data: salesByCategory.map(c => Number(c.value ?? 0)),
                 backgroundColor: [
                     '#3b82f6',
                     '#8b5cf6',
